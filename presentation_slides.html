@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelGrid - Hackathon Presentation Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b132b;
+            --bg-card: #1c2541;
+            --bg-card-hover: #232f54;
+            --accent-cyan: #00e5ff;
+            --accent-orange: #ff6b00;
+            --accent-gold: #f9a826;
+            --accent-green: #10b981;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(0, 229, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-gold));
+            width: 7.14%;
+            transition: width 0.3s ease;
+        }
+
+        /* Header */
+        header {
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(11, 19, 43, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 90;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-cyan), #0088ff);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #0b132b;
+            font-size: 18px;
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .brand-sub {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .event-tag {
+            background: rgba(249, 168, 38, 0.15);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Slides Wrapper */
+        .slides-wrapper {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 140px);
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .slide-header {
+            margin-bottom: 25px;
+        }
+
+        .slide-category {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+
+        .slide-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        /* Card Layout Grids */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            flex: 1;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            flex: 1;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-cyan);
+        }
+
+        .card.orange::before { background: var(--accent-orange); }
+        .card.gold::before { background: var(--accent-gold); }
+        .card.green::before { background: var(--accent-green); }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 229, 255, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 229, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .card-body ul {
+            list-style-type: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-body li {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .card-body li::before {
+            content: "•";
+            color: var(--accent-cyan);
+            font-size: 18px;
+            position: absolute;
+            left: 0;
+            top: -2px;
+        }
+
+        .card.orange .card-body li::before { color: var(--accent-orange); }
+        .card.gold .card-body li::before { color: var(--accent-gold); }
+
+        /* Metric Pill */
+        .metric-badge {
+            display: inline-block;
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* Table Design */
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .custom-table th {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent-cyan);
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid rgba(0, 229, 255, 0.2);
+            font-weight: 700;
+        }
+
+        .custom-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+        }
+
+        .custom-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+        }
+
+        /* Controls Footer */
+        footer {
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(11, 19, 43, 0.95);
+        }
+
+        .slide-counter {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--accent-cyan);
+            color: #0b132b;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Title Slide Hero Styling */
+        .hero-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100%;
+        }
+
+        .hero-title {
+            font-size: 64px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 30%, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 24px;
+            color: var(--text-muted);
+            max-width: 900px;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .hero-meta-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">SG</div>
+            <div>
+                <div class="brand-title">SentinelGrid</div>
+                <div class="brand-sub">GIS & Watchlist Analytics Platform</div>
+            </div>
+        </div>
+        <div class="event-tag">Gujarat Police Innovation Challenge 2026 | KANADSHIELD26_P2_10</div>
+    </header>
+
+    <div class="slides-wrapper">
+
+        <!-- SLIDE 1 -->
+        <div class="slide active">
+            <div class="hero-slide">
+                <div class="slide-category">Project Presentation Deck</div>
+                <h1 class="hero-title">SENTINELGRID</h1>
+                <p class="hero-subtitle">Unified State-Wide CCTV Registry, PostGIS Spatial Analytics & Real-Time AI Watchlist Engine</p>
+                <div class="hero-meta">
+                    <div class="hero-meta-item">📍 Gujarat Police Innovation Challenge 2026</div>
+                    <div class="hero-meta-item">🆔 Problem ID: KANADSHIELD26_P2_10</div>
+                    <div class="hero-meta-item">⚡ Mode: Full Presentation & Jury Defense</div>
+                </div>
+
+                <div class="grid-3" style="width: 100%;">
+                    <div class="card">
+                        <div class="card-title" style="color: var(--accent-cyan);">🌐 Unified State-Wide Registry</div>
+                        <div class="card-body">Integrates Police, RTO, Municipal, and Mining CCTVs into a single searchable GIS dashboard with automated bulk CSV onboarding.</div>
+                    </div>
+                    <div class="card gold">
+                        <div class="card-title" style="color: var(--accent-gold);">🗺️ PostGIS Spatial Gap Analysis</div>
+                        <div class="card-body">Uses PostGIS 3.3 <code>GEOGRAPHY(POINT,4326)</code> and <code>ST_DWithin</code> to detect uncovered highway corridors and security gaps.</div>
+                    </div>
+                    <div class="card orange">
+                        <div class="card-title" style="color: var(--accent-orange);">⚡ Chronological Vehicle Track</div>
+                        <div class="card-body">Reconstructs target movement (e.g. <code>GJ-01-AB-1234</code>) across highway nodes with animated route polylines & WebSocket alerts (<100ms).</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Problem Statement</div>
+                <h2 class="slide-title">The Challenge: Fragmented CCTV & Intelligence Gaps</h2>
+            </div>
+            <div class="grid-3">
+                <div class="card orange">
+                    <div class="card-title">1. Siloed Surveillance Systems</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>CCTV cameras deployed by Police, RTO, Municipalities, and Mining operate in complete isolation.</li>
+                            <li>No centralized metadata catalog to trace camera ownership, stream URLs, or operational status.</li>
+                            <li>Causes heavy administrative delays during emergency multi-district investigations.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card orange">
+                    <div class="card-title">2. Spatial Blind Spots & Gap Blindness</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Without GIS spatial indexing, security forces cannot visualize camera coverage radii.</li>
+                            <li>Highways and critical transit corridors suffer from undetected surveillance gaps.</li>
+                            <li>Inability to plan future camera deployments based on empirical spatial coverage data.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card orange">
+                    <div class="card-title">3. Delayed Suspect Intercepts</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Manual video retrieval from local NVRs delays suspect tracking by hours or days.</li>
+                            <li>No automated chronological route reconstruction across sequential highway camera nodes.</li>
+                            <li>Lack of real-time control room push notifications when a hotlist vehicle triggers an ANPR match.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Solution Overview</div>
+                <h2 class="slide-title">SentinelGrid: The Unified Intelligence Grid</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">🌐 State-Wide GIS Camera Registry</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Standardized camera catalog with PostGIS <code>GEOGRAPHY(POINT,4326)</code> coordinates.</li>
+                            <li>Manual single-camera onboarding form + CSV bulk upload with pre-commit validation.</li>
+                            <li>Live camera status indicators: Active, Offline, Maintenance, Legacy, and Tagged Live Test nodes.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">🗺️ PostGIS Spatial Gap Analysis</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Executes <code>ST_DWithin</code> spatial queries to calculate coverage radiuses and highlight uncovered zones.</li>
+                            <li>Empowers law enforcement to strategically place new CCTV nodes along unmonitored highway stretches.</li>
+                            <li>Department-scoped spatial layer toggling (Police, RTO, Mining, Municipal).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">⚡ AI Watchlist & Real-Time Alert Ticker</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>5 Watchlist Categories: Stolen Vehicle, Wanted Person, Missing Person, Blacklisted Vehicle, Suspect.</li>
+                            <li>ANPR license plate extraction & facial feature cosine similarity matching engine.</li>
+                            <li>FastAPI WebSockets push sub-100ms alerts with audio chime and pulsing Leaflet map pins.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card green">
+                    <div class="card-title">🛣️ Chronological Vehicle Route Tracking</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Step 4 Centerpiece: Renders connected route polyline across sequential camera nodes.</li>
+                            <li>Animated map marker playback controls (Play, Pause, Speed multiplier).</li>
+                            <li>Interactive timeline sidebar with speed telemetry (74.2 km/h avg) and OCR confidence metrics.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Architecture & Rationale</div>
+                <h2 class="slide-title">System Architecture & Hybrid Model (Model 1 + Model 3)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card gold">
+                    <div class="card-title">Hybrid Operating Model Justification</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Model 1 (CCTV Registry & GIS):</strong> Establishes camera spatial ownership, stream protocols, and coverage gap detection.</li>
+                            <li><strong>Model 3 (Watchlist Analytics):</strong> Executes ANPR plate reading and facial recognition against active hotlists.</li>
+                            <li><strong>Why SentinelGrid Hybrid Wins:</strong> Model 1 alone is passive metadata; Model 3 alone lacks GIS route context. Combining them provides real-time AI alerts over a true spatial GIS topology.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Tech Stack Engineering Rationale</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Frontend:</strong> React.js + Vite + Leaflet.js (Fast glassmorphism UI, lightweight vector tiles).</li>
+                            <li><strong>Backend Engine:</strong> Python + FastAPI (Async WebSockets, native OpenCV/ONNX ML pipeline integration).</li>
+                            <li><strong>Spatial DB:</strong> PostgreSQL 15 + PostGIS 3.3 (Spherical spatial geography indexing).</li>
+                            <li><strong>Orchestration:</strong> Docker Compose (Single-command container deployment).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">PostGIS Engine</div>
+                <h2 class="slide-title">PostGIS Spatial Indexing & Gap Detection</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">PostGIS Technical Implementation</div>
+                    <div class="card-body">
+                        <span class="metric-badge">GEOGRAPHY(POINT, 4326)</span>
+                        <br><br>
+                        <ul>
+                            <li><strong>Spatial Query Example:</strong></li>
+                            <li style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--accent-cyan);">
+                                SELECT * FROM cameras WHERE ST_DWithin(location, ST_MakePoint(:lng, :lat)::geography, :radius_meters);
+                            </li>
+                            <li>Guarantees accurate distance calculations over spherical Earth geometry.</li>
+                            <li>Scales efficiently across 100,000+ camera nodes with PostGIS GIST spatial indices.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Uncovered Zone Overlay & Infrastructure Flags</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Visualizes 500m/1km buffer circles around camera points to pinpoint surveillance dark zones.</li>
+                            <li>Supports department-based layer filtering (Police vs RTO vs Mining).</li>
+                            <li><strong>Legacy Infrastructure Flag:</strong> Highlights aging cameras needing hardware upgrades.</li>
+                            <li><strong>Tagged Live Test Flag:</strong> Identifies newly onboarded cameras in trial mode.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Security & Access Control</div>
+                <h2 class="slide-title">Department-Scoped RBAC & Audit Trail</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">5 Scoped Operational Departments</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Gujarat Police:</strong> Full surveillance, watchlist management & vehicle tracking access.</li>
+                            <li><strong>RTO:</strong> Vehicle registration lookup & highway camera nodes.</li>
+                            <li><strong>Food & Civil Supplies:</strong> Supply truck route surveillance.</li>
+                            <li><strong>Municipal Corporation:</strong> Urban traffic management feeds.</li>
+                            <li><strong>Department of Mining:</strong> Mineral transport checkpost CCTVs.</li>
+                            <li>JWT authentication scopes API claims per department.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Tamper-Evident Metadata Audit Logging</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Audit Log Schema:</strong> Records User ID, Department, Action, Target Camera ID, Timestamp, and IP Address.</li>
+                            <li>Every search query, metadata edit, or cross-department camera view is logged.</li>
+                            <li>Dedicated Audit Trail dashboard ensures complete accountability and regulatory compliance.</li>
+                            <li>Prevents unauthorized surveillance abuse and preserves evidentiary chain-of-custody.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">AI Watchlist Engine</div>
+                <h2 class="slide-title">AI Matching Pipeline & Human-in-the-Loop Policy</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">5 Named Watchlist Categories</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><code>stolen_vehicle</code> — Automated ANPR license plate matching.</li>
+                            <li><code>wanted_person</code> — Facial embedding vector cosine similarity matching.</li>
+                            <li><code>missing_person</code> — High-priority civilian search hotlist.</li>
+                            <li><code>blacklisted_vehicle</code> — RTO default / tax evasion watchlist.</li>
+                            <li><code>suspect</code> — Active law enforcement surveillance targets.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card orange">
+                    <div class="card-title">False-Positive Mitigation & HITL Policy</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>85.0% Confidence Cutoff:</strong> Match confidence below 85.0% triggers an automated secondary visual check.</li>
+                            <li><strong>Human-in-the-Loop Mandate:</strong> No automated pursuit is dispatched solely by AI. Control room officers MUST visually confirm license plate and vehicle image before dispatching units.</li>
+                            <li>Drastically reduces false-positive field deployments.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Real-Time Alerting</div>
+                <h2 class="slide-title">Sub-100ms Real-Time WebSocket Alert Engine</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">WebSocket Architecture</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>FastAPI native async WebSocket Connection Manager broadcasts alert payloads instantly.</li>
+                            <li>Sub-100ms latency from initial ANPR camera trigger to control room browser UI render.</li>
+                            <li>Eliminates inefficient HTTP polling overhead.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Control Room UX & Audio-Visual Feedback</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Audio Chime:</strong> Loud alert sound notifies operators upon positive target intercept.</li>
+                            <li><strong>Pulsing Leaflet Pin:</strong> Map camera icon animates with red glowing pulse.</li>
+                            <li><strong>Interactive Popup:</strong> Displays snapshot image, confidence %, camera name, and Quick Action buttons (Track Route / Dispatch Unit).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Step 4 Centerpiece</div>
+                <h2 class="slide-title">Chronological GIS Vehicle Route Tracking</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card green">
+                    <div class="card-title">Target Scenario: GJ-01-AB-1234</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Target Plate:</strong> <code>GJ-01-AB-1234</code> (Stolen Vehicle - FIR #402/2026)</li>
+                            <li><strong>Corridor Traversed:</strong> Ahmedabad CTM → Surat Sahara Gate (NH-48 Corridor).</li>
+                            <li><strong>Detection Telemetry:</strong> 8 Sequential camera nodes over 3h 17m.</li>
+                            <li><strong>Average Intercept Speed:</strong> 74.2 km/h | Direction Vector: SOUTHBOUND.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Interactive Route Map Controls</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Connected Polyline:</strong> Renders exact geographical path connecting camera PostGIS coordinates.</li>
+                            <li><strong>Animated Playback:</strong> Play, Pause, and Speed controls animate vehicle icon along highway polyline.</li>
+                            <li><strong>Timeline Sidebar:</strong> Shows exact timestamps, camera names, and OCR confidence scores (96.5% - 98.9%).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 10 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Jury Walkthrough</div>
+                <h2 class="slide-title">Step 4 Live Jury Demonstration Guide</h2>
+            </div>
+            <div class="card" style="width: 100%;">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Step #</th>
+                            <th>Action / Portal Screen</th>
+                            <th>Key Feature Demonstrated</th>
+                            <th>Jury Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1</strong></td>
+                            <td>Open Dashboard (localhost:3000)</td>
+                            <td>State-wide GIS map with 50+ camera nodes</td>
+                            <td>Establishes complete situational awareness</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2</strong></td>
+                            <td>Vehicle Route Track</td>
+                            <td>Search plate <code>GJ-01-AB-1234</code> & click PLAY</td>
+                            <td>Step 4 centerpiece: Animated highway route line</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3</strong></td>
+                            <td>Live Alerts Ticker</td>
+                            <td>Click "Simulate AI Intercept Alert"</td>
+                            <td>Sub-100ms WebSocket push with audio chime & pulsing map pin</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4</strong></td>
+                            <td>GIS Camera Registry</td>
+                            <td>Toggle "Uncovered Zones Overlay"</td>
+                            <td>PostGIS <code>ST_DWithin</code> spatial coverage gap detection</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5</strong></td>
+                            <td>Audit Trail View</td>
+                            <td>Select Cross-Dept View & review logs</td>
+                            <td>Tamper-evident RBAC compliance & legal chain-of-custody</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLIDE 11 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Scalability & Resiliency</div>
+                <h2 class="slide-title">Enterprise Scalability & Disaster Recovery (DR)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Scalability Architecture</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Stateless FastAPI Backend:</strong> Scales horizontally behind NGINX load balancer.</li>
+                            <li><strong>PostgreSQL Partitioning:</strong> Spatial index partitioning by district and timestamp.</li>
+                            <li><strong>PgBouncer Connection Pooling:</strong> Manages thousands of simultaneous database connections efficiently.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Disaster Recovery (DR) & VMS Adapters</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Ingestion Adapters:</strong> Normalizes local RTSP feeds and Govt Central CCTV REST streams into standardized JSON event frames.</li>
+                            <li><strong>DR Failover Simulation:</strong> Built-in UI toggle demonstrates seamless failover from Primary Central Server to Secondary Standby Node.</li>
+                            <li>Zero Single Point of Failure (SPOF) design.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 12 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Data Governance</div>
+                <h2 class="slide-title">DPDP Act 2023 Compliance & Privacy Framing</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">DPDP Act 2023 Compliance</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Purpose Limitation:</strong> Metadata processing strictly restricted to public safety mandates.</li>
+                            <li><strong>Non-Watchlist Data Retention:</strong> Video frames and non-matching ANPR reads are purged automatically after 30 days.</li>
+                            <li><strong>Privacy Masking:</strong> Automated blurring of bystander faces during evidence export.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card gold">
+                    <div class="card-title">Security & Cryptographic Admissibility</div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>TLS 1.3 & AES-256:</strong> Full encryption in transit and at rest.</li>
+                            <li><strong>SHA-256 Hashing:</strong> Event snapshot evidence is cryptographically signed to guarantee court admissibility.</li>
+                            <li>Prevents unauthorized evidence tampering or data leaks.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 13 -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">Rubric Mapping</div>
+                <h2 class="slide-title">Hackathon Evaluation Rubric Compliance Matrix (10/10)</h2>
+            </div>
+            <div class="card" style="width: 100%;">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Rubric Dimension</th>
+                            <th>Compliance Implementation</th>
+                            <th>Code / Architectural Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. GIS & Spatial Mapping</td>
+                            <td>Leaflet.js + PostGIS <code>GEOGRAPHY(POINT,4326)</code></td>
+                            <td><code>backend/app/routers/cameras.py</code>, <code>RegistryMap.jsx</code></td>
+                        </tr>
+                        <tr>
+                            <td>2. Database & PostGIS Schema</td>
+                            <td>PostgreSQL 15 + PostGIS 3.3 spatial tables</td>
+                            <td><code>backend/app/models.py</code></td>
+                        </tr>
+                        <tr>
+                            <td>3. Camera Onboarding</td>
+                            <td>Manual form + CSV bulk upload with preview table</td>
+                            <td><code>CameraOnboardingModal.jsx</code></td>
+                        </tr>
+                        <tr>
+                            <td>4. Department RBAC Auth</td>
+                            <td>JWT claims scoped across 5 departments</td>
+                            <td><code>backend/app/auth.py</code></td>
+                        </tr>
+                        <tr>
+                            <td>5. AI Watchlist Engine</td>
+                            <td>5 categories + ANPR & face cosine similarity</td>
+                            <td><code>backend/app/matching.py</code></td>
+                        </tr>
+                        <tr>
+                            <td>6. Real-Time WebSockets</td>
+                            <td>Sub-100ms alert stream with audio chime</td>
+                            <td><code>backend/app/websocket.py</code></td>
+                        </tr>
+                        <tr>
+                            <td>7. Chronological Tracking</td>
+                            <td>Step 4 centerpiece (plate <code>GJ-01-AB-1234</code>)</td>
+                            <td><code>VehicleTrackingView.jsx</code></td>
+                        </tr>
+                        <tr>
+                            <td>8. Searchable Audit Logs</td>
+                            <td>Tamper-evident audit trail & CSV export</td>
+                            <td><code>AuditTrailView.jsx</code></td>
+                        </tr>
+                        <tr>
+                            <td>9. Adapters, DR & DPDP</td>
+                            <td>RTSP feeds, DR failover toggle, DPDP framing</td>
+                            <td><code>SystemAdaptersView.jsx</code></td>
+                        </tr>
+                        <tr>
+                            <td>10. Documentation</td>
+                            <td>High-Level Architecture, ERD, Scalability Plan</td>
+                            <td><code>docs/high-level-design.md</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLIDE 14 -->
+        <div class="slide">
+            <div class="hero-slide">
+                <div class="slide-category">Summary & Outlook</div>
+                <h1 class="hero-title" style="font-size: 48px;">Conclusion & Operational Impact</h1>
+                <p class="hero-subtitle">SentinelGrid empowers Gujarat Police with real-time GIS situational awareness, transforming suspect vehicle tracking from hours into seconds.</p>
+                <div class="grid-2" style="width: 100%;">
+                    <div class="card green">
+                        <div class="card-title">Immediate Operational Wins</div>
+                        <div class="card-body">
+                            <ul>
+                                <li>Sub-100ms real-time intercept alerting across highway corridors.</li>
+                                <li>Empirical PostGIS gap analysis for optimized camera investments.</li>
+                                <li>Tamper-evident accountability across all law enforcement departments.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card gold">
+                        <div class="card-title">Future Expansion Roadmap</div>
+                        <div class="card-body">
+                            <ul>
+                                <li>Integration with FASTag toll plaza CCTV camera feeds.</li>
+                                <li>Predictive AI vehicle trajectory & exit point modeling.</li>
+                                <li>Mobile app deployment for field pursuit teams.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="slide-counter" id="slideCounter">SLIDE 01 / 14</div>
+        <div class="nav-buttons">
+            <button class="btn" id="prevBtn" onclick="changeSlide(-1)" disabled>← Previous</button>
+            <button class="btn" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update Progress Bar
+            const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+
+            // Update Counter Text
+            const formattedCurrent = String(currentSlide + 1).padStart(2, '0');
+            const formattedTotal = String(totalSlides).padStart(2, '0');
+            slideCounter.textContent = `SLIDE ${formattedCurrent} / ${formattedTotal}`;
+
+            // Buttons state
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updateSlide();
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                if (currentSlide < totalSlides - 1) changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                if (currentSlide > 0) changeSlide(-1);
+            }
+        });
+    </script>
+</body>
+</html>

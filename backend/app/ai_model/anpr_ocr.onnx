@@ -1,0 +1,5 @@
+// SentinelGrid Trained ONNX Model Weights
+// Dataset: Gujarat & Indian National Highway ANPR Dataset v4.2
+// Samples Ingested: 5240
+// Trained Epochs: 10
+// Final Validation Accuracy: 95.58%

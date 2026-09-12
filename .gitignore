@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+backend/venv/
+venv/
+env/
+.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Local tools & executables
+cloudflared.exe
+*.exe
+
+# Frontend build & temporary
+frontend/dist/
+dist/
+.vercel/
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+scratch/
+
+# OS metadata
+.DS_Store
+Thumbs.db

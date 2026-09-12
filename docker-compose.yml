@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 15 with PostGIS 3.3 Spatial Extension
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: sentinelgrid-postgis
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel123
+      POSTGRES_DB: sentinelgrid
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinelgrid"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Python FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentinelgrid-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_USER=sentinel
+      - POSTGRES_PASSWORD=sentinel123
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=sentinelgrid
+      - DATABASE_URL=postgresql+asyncpg://sentinel:sentinel123@db:5432/sentinelgrid
+      - SECRET_KEY=sentinelgrid-gujarat-police-secret-key-2026
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # React.js Vite Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sentinelgrid-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
