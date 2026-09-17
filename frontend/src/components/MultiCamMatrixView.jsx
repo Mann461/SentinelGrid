@@ -147,8 +147,8 @@ export default function MultiCamMatrixView() {
                 />
               )}
 
-              {/* AI Bounding Box Overlay */}
-              {idx % 2 === 0 && (
+              {/* AI Bounding Box Overlay (only for simulated registry feeds to avoid clashing with telemetry) */}
+              {feedMode !== 'sentinel_grid' && idx % 2 === 0 && (
                 <div className="absolute top-1/4 left-1/3 w-36 h-20 border-2 border-cyan-400 bg-cyan-500/10 rounded flex flex-col justify-between p-1 animate-pulse pointer-events-none">
                   <div className="bg-cyan-950/90 text-cyan-300 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded self-start border border-cyan-500/50">
                     ANPR: GJ-01-AB-1234 (98.4%)

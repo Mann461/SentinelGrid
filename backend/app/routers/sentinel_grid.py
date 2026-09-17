@@ -182,17 +182,28 @@ async def get_camera_snapshot(
     # Overlay Telemetry Text
     cam_name = camera_id.upper()
     ts = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    cv2.putText(img, f"SENTINEL GRID // {cam_name}", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 220, 255), 2)
-    cv2.putText(img, f"FEED PROTOCOL: {'HLS (CDN)' if prefer_hls else 'RTSP (TCP)'}", (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (160, 180, 200), 1)
-    cv2.putText(img, f"STATUS: CONNECTING / STANDBY (Awaiting Auth)", (30, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 180, 255), 1)
-    cv2.putText(img, f"PTS MONOTONIC: DRIVEN VIA POS_MSEC", (30, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 200, 100), 1)
-    cv2.putText(img, f"TIMESTAMP: {ts}", (30, 190), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
+    cv2.putText(img, f"SENTINEL // {cam_name}", (30, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 230, 255), 2)
+    cv2.putText(img, f"FEED: {'HLS (cctv.corp8.cloud)' if prefer_hls else 'RTSP (103.250.160.189:8554)'} | FORCED-TCP", (30, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 190, 210), 1)
+    cv2.putText(img, f"STATUS: AWAITING GATEWAY AUTH (Enter credentials in Grid Config)", (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 190, 255), 1)
+    cv2.putText(img, f"TIME: {ts} | PTS: MONOTONIC", (30, 125), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (140, 160, 180), 1)
     
-    # Target Box
-    cv2.rectangle(img, (180, 220), (540, 420), (0, 255, 200), 2)
-    cv2.putText(img, "[ AI INFERENCE FIELD OF VIEW ]", (210, 325), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 200), 1)
+    # Target Box with Corner Reticles
+    bx1, by1, bx2, by2 = 180, 165, 540, 385
+    cv2.rectangle(img, (bx1, by1), (bx2, by2), (40, 160, 120), 1)
+    cLen = 15
+    cv2.line(img, (bx1, by1), (bx1 + cLen, by1), (0, 255, 200), 2)
+    cv2.line(img, (bx1, by1), (bx1, by1 + cLen), (0, 255, 200), 2)
+    cv2.line(img, (bx2, by1), (bx2 - cLen, by1), (0, 255, 200), 2)
+    cv2.line(img, (bx2, by1), (bx2, by1 + cLen), (0, 255, 200), 2)
+    cv2.line(img, (bx1, by2), (bx1 + cLen, by2), (0, 255, 200), 2)
+    cv2.line(img, (bx1, by2), (bx1, by2 - cLen), (0, 255, 200), 2)
+    cv2.line(img, (bx2, by2), (bx2 - cLen, by2), (0, 255, 200), 2)
+    cv2.line(img, (bx2, by2), (bx2, by2 - cLen), (0, 255, 200), 2)
+    
+    cv2.putText(img, "[ AI INFERENCE FIELD OF VIEW ]", (235, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 200), 1)
+    cv2.putText(img, "ANPR / ARCFACE STANDBY", (270, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (160, 200, 180), 1)
 
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 80]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
     _, buf = cv2.imencode('.jpg', img, encode_param)
 
     return Response(
