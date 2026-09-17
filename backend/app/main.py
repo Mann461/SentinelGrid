@@ -6,7 +6,7 @@ from app.config import settings
 from app.database import init_db
 from app.seed import seed_data
 from app.websocket import manager as ws_manager
-from app.routers import auth, cameras, watchlist, events, alerts, system
+from app.routers import auth, cameras, watchlist, events, alerts, system, sentinel_grid
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,6 +17,16 @@ async def lifespan(app: FastAPI):
         await seed_data()
     except Exception as e:
         print(f"Seeding notice: {e}")
+    
+    # Auto-synchronize official Sentinel Camera Grid (cam01 - cam30)
+    try:
+        from app.database import AsyncSessionLocal
+        async with AsyncSessionLocal() as session:
+            await sentinel_grid.sync_catalog_to_database(session)
+            print("Successfully synchronized Sentinel Camera Grid (cam01-cam30) to registry.")
+    except Exception as e:
+        print(f"Sentinel Grid sync notice: {e}")
+
     yield
     print("Shutting down SentinelGrid Backend Service...")
 
@@ -56,6 +66,7 @@ app.include_router(watchlist.router)
 app.include_router(events.router)
 app.include_router(alerts.router)
 app.include_router(system.router)
+app.include_router(sentinel_grid.router)
 
 @app.websocket("/ws/alerts")
 async def websocket_alerts_endpoint(websocket: WebSocket):

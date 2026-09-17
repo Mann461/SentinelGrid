@@ -164,6 +164,28 @@ export const systemAPI = {
   }
 };
 
+export const sentinelGridAPI = {
+  getCameras: async () => {
+    const res = await api.get('/sentinel-grid/cameras');
+    return res.data;
+  },
+  getChecklist: async () => {
+    const res = await api.get('/sentinel-grid/checklist');
+    return res.data;
+  },
+  configureCredentials: async (email, password) => {
+    const res = await api.post('/sentinel-grid/configure-credentials', { email, password });
+    return res.data;
+  },
+  syncCatalog: async () => {
+    const res = await api.post('/sentinel-grid/sync-catalog');
+    return res.data;
+  },
+  getSnapshotUrl: (camId, preferHls = true) => {
+    return `${API_BASE}/sentinel-grid/stream/${camId}/snapshot?prefer_hls=${preferHls}&t=${Date.now()}`;
+  }
+};
+
 export function connectWebSocket(onMessageCallback) {
   let wsUrl = import.meta.env.VITE_WS_BASE;
   if (!wsUrl) {

@@ -63,6 +63,14 @@ async def get_feed_adapters():
             active_connections=38,
             status="HEALTHY",
             throughput_mbps=320.1
+        ),
+        FeedAdapterStatus(
+            adapter_id="adp-sentinel-grid",
+            name="Official Sentinel Camera Grid Integrator (cam01-cam30 | Forced-TCP & PTS-Driven)",
+            feed_type="SENTINEL_GRID_TCP_HLS",
+            active_connections=30,
+            status="HEALTHY",
+            throughput_mbps=450.0
         )
     ]
 

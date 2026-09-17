@@ -26,6 +26,14 @@ class Settings(BaseSettings):
         "sqlite:///./sentinelgrid.db" if os.getenv("USE_SQLITE", "true").lower() == "true" else f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
     )
 
+    # Sentinel Camera Grid Integration (Official Integrator Guide)
+    SENTINEL_GRID_HOST: str = os.getenv("SENTINEL_GRID_HOST", "103.250.160.189")
+    SENTINEL_GRID_CDN_HOST: str = os.getenv("SENTINEL_GRID_CDN_HOST", "cctv.corp8.cloud")
+    SENTINEL_GRID_RTSP_PORT: int = int(os.getenv("SENTINEL_GRID_RTSP_PORT", "8554"))
+    SENTINEL_GRID_WHEP_PORT: int = int(os.getenv("SENTINEL_GRID_WHEP_PORT", "8889"))
+    SENTINEL_GRID_EMAIL: str = os.getenv("SENTINEL_GRID_EMAIL", "integrator@sentinelgrid.in")
+    SENTINEL_GRID_PASSWORD: str = os.getenv("SENTINEL_GRID_PASSWORD", "SENTINEL-DEMO-ACCESS-2026")
+
     class Config:
         case_sensitive = True
 

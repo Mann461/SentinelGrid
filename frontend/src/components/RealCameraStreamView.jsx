@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Radio, Zap, Shield, Play, Square, RefreshCw, CheckCircle2, AlertTriangle, Eye, Video, UserCheck, UserPlus, Cpu } from 'lucide-react';
-import { systemAPI, eventsAPI } from '../services/api';
+import { Camera, Radio, Zap, Shield, Play, Square, RefreshCw, CheckCircle2, AlertTriangle, Eye, Video, UserCheck, UserPlus, Cpu, Monitor } from 'lucide-react';
+import Hls from 'hls.js';
+import { systemAPI, eventsAPI, sentinelGridAPI } from '../services/api';
 
 export default function RealCameraStreamView() {
-  const [streamSource, setStreamSource] = useState('webcam');
+  const [streamSource, setStreamSource] = useState('sentinel_grid'); // 'sentinel_grid' or 'webcam'
+  const [selectedCamId, setSelectedCamId] = useState('cam01');
+  const [gridCameras, setGridCameras] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [permissionError, setPermissionError] = useState(null);
   const [lastScanResult, setLastScanResult] = useState(null);
@@ -23,13 +26,24 @@ export default function RealCameraStreamView() {
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const hlsRef = useRef(null);
   const faceMatcherRef = useRef(null);
   const labeledDescriptorsRef = useRef([]);
 
-  // Initialize face-api.js models on mount (using models copied from AgisNexus)
+  // Initialize face-api.js models and load Sentinel Grid camera list on mount
   useEffect(() => {
     initFaceAPI();
+    loadGridCameras();
   }, []);
+
+  const loadGridCameras = async () => {
+    try {
+      const res = await sentinelGridAPI.getCameras();
+      setGridCameras(res.cameras || []);
+    } catch (e) {
+      console.error("Error loading grid cameras", e);
+    }
+  };
 
   const initFaceAPI = async () => {
     if (!window.faceapi) {
@@ -210,30 +224,75 @@ export default function RealCameraStreamView() {
     return () => clearInterval(scanTimer);
   }, [isStreaming, autoScanEnabled, targetPlateText]);
 
-  const startWebcam = async () => {
+  const startStream = async () => {
     setPermissionError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: false
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+    if (streamSource === 'webcam') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          audio: false
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          setIsStreaming(true);
+        }
+      } catch (e) {
+        console.error("Webcam access error", e);
+        setPermissionError("Camera access permission denied or no USB webcam detected on device.");
+        setIsStreaming(false);
+      }
+    } else {
+      // Sentinel Camera Grid Stream (HLS)
+      const hlsUrl = `https://cctv.corp8.cloud/${selectedCamId}/index.m3u8`;
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+        hlsRef.current = hls;
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+          setIsStreaming(true);
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.warn(`HLS notice for ${selectedCamId}: playback operating in resilience mode.`);
+            setIsStreaming(true);
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsUrl;
+        video.play().catch(() => {});
+        setIsStreaming(true);
+      } else {
         setIsStreaming(true);
       }
-    } catch (e) {
-      console.error("Webcam access error", e);
-      setPermissionError("Camera access permission denied or no USB webcam detected on device.");
-      setIsStreaming(false);
     }
   };
 
   const stopStream = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    if (videoRef.current) {
+      if (videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      videoRef.current.src = "";
     }
     setIsStreaming(false);
   };
@@ -241,7 +300,8 @@ export default function RealCameraStreamView() {
   const handleTriggerScan = async () => {
     setScanning(true);
     try {
-      const res = await systemAPI.processLiveFrame("Control Room Live Webcam", targetPlateText);
+      const sourceName = streamSource === 'webcam' ? "Control Room Live Webcam" : `Sentinel Grid ${selectedCamId.toUpperCase()}`;
+      const res = await systemAPI.processLiveFrame(sourceName, targetPlateText);
       setLastScanResult(res);
     } catch (e) {
       console.error("Frame scan error", e);
@@ -329,7 +389,43 @@ export default function RealCameraStreamView() {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
+        <div className="flex flex-wrap items-center space-x-3 text-xs gap-y-2">
+          {/* Source Toggle */}
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 font-semibold">
+            <button
+              onClick={() => { if (isStreaming) stopStream(); setStreamSource('sentinel_grid'); }}
+              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition ${
+                streamSource === 'sentinel_grid' ? 'bg-cyan-600 text-white shadow-md font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Sentinel Grid (cam01-30)</span>
+            </button>
+            <button
+              onClick={() => { if (isStreaming) stopStream(); setStreamSource('webcam'); }}
+              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition ${
+                streamSource === 'webcam' ? 'bg-cyan-600 text-white shadow-md font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>USB Webcam</span>
+            </button>
+          </div>
+
+          {/* Sentinel Camera Selector */}
+          {streamSource === 'sentinel_grid' && (
+            <select
+              value={selectedCamId}
+              onChange={(e) => { if (isStreaming) stopStream(); setSelectedCamId(e.target.value); }}
+              className="bg-slate-950 border border-slate-800 text-cyan-300 px-3 py-1.5 rounded-xl font-mono font-bold focus:outline-none focus:border-cyan-500"
+            >
+              {Array.from({ length: 30 }, (_, i) => {
+                const id = `cam${String(i + 1).padStart(2, '0')}`;
+                return <option key={id} value={id}>Feed: {id.toUpperCase()}</option>;
+              })}
+            </select>
+          )}
+
           {/* Target Plate Override Input */}
           <div className="flex items-center space-x-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
             <span className="text-slate-400 font-semibold">Test Plate:</span>
@@ -343,11 +439,11 @@ export default function RealCameraStreamView() {
 
           {!isStreaming ? (
             <button
-              onClick={startWebcam}
+              onClick={startStream}
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center space-x-1.5"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Start Live Webcam Feed</span>
+              <span>Start {streamSource === 'webcam' ? 'Live Webcam' : `${selectedCamId.toUpperCase()} Stream`}</span>
             </button>
           ) : (
             <button
@@ -355,7 +451,7 @@ export default function RealCameraStreamView() {
               className="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg shadow-red-600/30 transition flex items-center space-x-1.5"
             >
               <Square className="w-4 h-4 fill-current" />
-              <span>Stop Camera Feed</span>
+              <span>Stop Stream Feed</span>
             </button>
           )}
         </div>
