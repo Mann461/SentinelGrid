@@ -267,8 +267,16 @@ export default function VehicleTrackingView() {
             className="w-full h-full"
           >
             <TileLayer
-              attribution='&copy; CARTO Dark Matter GIS'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+              maxNativeZoom={16}
+            />
+            <TileLayer
+              attribution=""
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+              maxNativeZoom={16}
             />
 
             {trackData && trackData.route_coordinates.length > 0 && (
