@@ -114,22 +114,27 @@ export default function HlsVideoPlayer({
             src={snapshotUrl}
             alt={`Stream ${cameraId}`}
             className="w-full h-full object-cover"
-            onError={() => setLoadError(true)}
+            onError={() => {
+              // Retry on transient network delay to prevent permanent black screen
+              setTimeout(() => {
+                setSnapshotUrl(sentinelGridAPI.getSnapshotUrl(cameraId));
+              }, 1200);
+            }}
           />
-          <div className="absolute bottom-2 left-2 bg-slate-900/90 text-cyan-300 text-[9px] font-mono px-2 py-0.5 rounded border border-cyan-500/40 flex items-center space-x-1">
+          <div className="absolute bottom-2 left-2 bg-slate-900/90 text-cyan-300 text-[9px] font-mono px-2 py-0.5 rounded border border-cyan-500/40 flex items-center space-x-1 shadow-md">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
             <span>PTS PROXY MODE // TCP FORCED</span>
           </div>
         </div>
       )}
 
-      {/* Live Badge */}
-      <div className="absolute top-2 left-2 flex items-center space-x-1.5 pointer-events-none">
+      {/* Live Badge (Crisp, self-contained header tag) */}
+      <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 pointer-events-none bg-slate-950/80 backdrop-blur-md px-1.5 py-1 rounded-lg border border-slate-800 shadow-lg">
         <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded flex items-center space-x-1 animate-pulse">
           <Radio className="w-3 h-3" />
           <span>LIVE</span>
         </span>
-        <span className="bg-slate-900/90 text-slate-300 text-[9px] font-mono px-2 py-0.5 rounded border border-slate-700">
+        <span className="text-cyan-300 text-[9px] font-mono font-bold px-1">
           {cameraId.toUpperCase()}
         </span>
       </div>

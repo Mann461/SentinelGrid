@@ -3,8 +3,8 @@ import { Shield, CheckCircle2, AlertTriangle, Key, ExternalLink, RefreshCw, X, R
 import { sentinelGridAPI } from '../services/api';
 
 export default function SentinelGridConfigModal({ isOpen, onClose, onSyncSuccess }) {
-  const [email, setEmail] = useState('integrator@sentinelgrid.in');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('mann.25434014@nsitifscs.ac.in');
+  const [password, setPassword] = useState('AY9T-V9UB-FWSQ');
   const [checklist, setChecklist] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);

@@ -181,7 +181,7 @@ export const sentinelGridAPI = {
     const res = await api.post('/sentinel-grid/sync-catalog');
     return res.data;
   },
-  getSnapshotUrl: (camId, preferHls = true) => {
+  getSnapshotUrl: (camId, preferHls = false) => {
     return `${API_BASE}/sentinel-grid/stream/${camId}/snapshot?prefer_hls=${preferHls}&t=${Date.now()}`;
   }
 };

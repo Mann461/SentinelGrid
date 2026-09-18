@@ -49,6 +49,7 @@ class SentinelGridStreamAdapter:
         self._last_pts_ms: Dict[str, float] = {}
         self._last_frame_time: Dict[str, float] = {}
         self._reconnect_attempts: Dict[str, int] = {}
+        self._last_attempt_time: Dict[str, float] = {}
 
     def encode_email(self, email_str: str) -> str:
         """
@@ -158,6 +159,23 @@ class SentinelGridStreamAdapter:
         - Detects scene loop cut discontinuities
         - Closes captures properly to pace load
         """
+        now = time.time()
+        last_attempt = self._last_attempt_time.get(camera_id, 0)
+        attempts = self._reconnect_attempts.get(camera_id, 0)
+        
+        # If camera previously failed, enforce exponential backoff without blocking
+        if attempts > 0:
+            backoff_delay = min(30.0, 2.0 * (1.5 ** (attempts - 1)))
+            if (now - last_attempt) < backoff_delay:
+                return {
+                    "success": False,
+                    "error": f"Backoff cooling down ({backoff_delay:.1f}s)",
+                    "camera_id": camera_id,
+                    "pts_ms": None,
+                    "scene_discontinuity": False
+                }
+
+        self._last_attempt_time[camera_id] = now
         stream_url = self.build_hls_url(camera_id) if prefer_hls else self.build_rtsp_url(camera_id, custom_email, custom_pass)
         
         cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
@@ -167,6 +185,7 @@ class SentinelGridStreamAdapter:
             cap = cv2.VideoCapture(alt_url, cv2.CAP_FFMPEG)
 
         if not cap.isOpened():
+            self.calculate_backoff_delay(camera_id)
             return {
                 "success": False,
                 "error": "Could not connect to camera stream endpoint",

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List, Optional, Dict, Any
 import io
+import asyncio
 import datetime
 import cv2
 import numpy as np
@@ -142,7 +143,7 @@ async def configure_credentials(payload: Dict[str, str]):
 @router.get("/stream/{camera_id}/snapshot", summary="Capture Live Frame Snapshot from Sentinel Grid")
 async def get_camera_snapshot(
     camera_id: str,
-    prefer_hls: bool = Query(True, description="Prefer HLS CDN endpoint over RTSP"),
+    prefer_hls: bool = Query(False, description="Prefer HLS CDN endpoint over RTSP"),
     email: Optional[str] = Query(None),
     password: Optional[str] = Query(None)
 ):
@@ -150,7 +151,9 @@ async def get_camera_snapshot(
     Captures a live frame using the compliant OpenCV consumer.
     Falls back to a synthetic diagnostic telemetry frame if stream is offline.
     """
-    result = sentinel_grid_adapter.capture_live_frame(
+    # Run synchronous OpenCV capture in threadpool to prevent blocking the async event loop
+    result = await asyncio.to_thread(
+        sentinel_grid_adapter.capture_live_frame,
         camera_id=camera_id,
         prefer_hls=prefer_hls,
         custom_email=email,
@@ -172,23 +175,23 @@ async def get_camera_snapshot(
     # Generate synthetic telemetry placeholder frame if stream is temporarily offline or awaiting live auth
     h, w = 480, 720
     img = np.zeros((h, w, 3), dtype=np.uint8)
-    # Dark slate background with grid pattern
+    # Dark slate background with tactical grid pattern
     img[:] = (20, 24, 32)
     for y in range(0, h, 40):
         cv2.line(img, (0, y), (w, y), (30, 36, 48), 1)
     for x in range(0, w, 40):
         cv2.line(img, (x, 0), (x, h), (30, 36, 48), 1)
 
-    # Overlay Telemetry Text
+    # Overlay Telemetry Text (offset down to avoid colliding with HTML badges at top-left)
     cam_name = camera_id.upper()
     ts = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    cv2.putText(img, f"SENTINEL // {cam_name}", (30, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 230, 255), 2)
-    cv2.putText(img, f"FEED: {'HLS (cctv.corp8.cloud)' if prefer_hls else 'RTSP (103.250.160.189:8554)'} | FORCED-TCP", (30, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 190, 210), 1)
-    cv2.putText(img, f"STATUS: AWAITING GATEWAY AUTH (Enter credentials in Grid Config)", (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 190, 255), 1)
-    cv2.putText(img, f"TIME: {ts} | PTS: MONOTONIC", (30, 125), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (140, 160, 180), 1)
+    cv2.putText(img, f"SENTINEL SURVEILLANCE // {cam_name}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 230, 255), 2)
+    cv2.putText(img, f"FEED: {'HLS (CDN)' if prefer_hls else 'RTSP (TCP)'} | FORCED-TCP", (30, 95), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 190, 210), 1)
+    cv2.putText(img, f"STATUS: AWAITING GATEWAY AUTH (Standby Telemetry)", (30, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 190, 255), 1)
+    cv2.putText(img, f"TIME: {ts} | PTS: MONOTONIC", (30, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (140, 160, 180), 1)
     
     # Target Box with Corner Reticles
-    bx1, by1, bx2, by2 = 180, 165, 540, 385
+    bx1, by1, bx2, by2 = 180, 180, 540, 410
     cv2.rectangle(img, (bx1, by1), (bx2, by2), (40, 160, 120), 1)
     cLen = 15
     cv2.line(img, (bx1, by1), (bx1 + cLen, by1), (0, 255, 200), 2)

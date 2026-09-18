@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     SENTINEL_GRID_CDN_HOST: str = os.getenv("SENTINEL_GRID_CDN_HOST", "cctv.corp8.cloud")
     SENTINEL_GRID_RTSP_PORT: int = int(os.getenv("SENTINEL_GRID_RTSP_PORT", "8554"))
     SENTINEL_GRID_WHEP_PORT: int = int(os.getenv("SENTINEL_GRID_WHEP_PORT", "8889"))
-    SENTINEL_GRID_EMAIL: str = os.getenv("SENTINEL_GRID_EMAIL", "integrator@sentinelgrid.in")
-    SENTINEL_GRID_PASSWORD: str = os.getenv("SENTINEL_GRID_PASSWORD", "SENTINEL-DEMO-ACCESS-2026")
+    SENTINEL_GRID_EMAIL: str = os.getenv("SENTINEL_GRID_EMAIL", "mann.25434014@nsitifscs.ac.in")
+    SENTINEL_GRID_PASSWORD: str = os.getenv("SENTINEL_GRID_PASSWORD", "AY9T-V9UB-FWSQ")
 
     class Config:
         case_sensitive = True
