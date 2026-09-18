@@ -4,9 +4,24 @@ import { cameraAPI, sentinelGridAPI } from '../services/api';
 import HlsVideoPlayer from './HlsVideoPlayer';
 import SentinelGridConfigModal from './SentinelGridConfigModal';
 
+const DEFAULT_SENTINEL_CAMS = Array.from({ length: 30 }, (_, i) => {
+  const num = (i + 1).toString().padStart(2, '0');
+  const id = `cam${num}`;
+  return {
+    id,
+    name: `Sentinel Grid ${id.toUpperCase()}`,
+    protocol: 'HTTP-HLS / RTSP-TCP',
+    vendor: 'Axis Communications',
+    hls_url: `https://cctv.corp8.cloud/${id}/index.m3u8`,
+    rtsp_url: `rtsp://103.250.160.189:8554/stream/${id}`,
+    whep_url: `http://103.250.160.189:8889/stream/${id}/whep`,
+    department_name: 'Sentinel Camera Grid Hub'
+  };
+});
+
 export default function MultiCamMatrixView() {
   const [feedMode, setFeedMode] = useState('sentinel_grid'); // 'sentinel_grid' or 'registry'
-  const [cameras, setCameras] = useState([]);
+  const [cameras, setCameras] = useState(() => DEFAULT_SENTINEL_CAMS.slice(0, 4));
   const [gridSize, setGridSize] = useState(4); // 4 or 9
   const [selectedRegion, setSelectedRegion] = useState('ALL');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -20,26 +35,37 @@ export default function MultiCamMatrixView() {
     setIsLoading(true);
     try {
       if (feedMode === 'sentinel_grid') {
-        const data = await sentinelGridAPI.getCameras();
-        const cams = (data.cameras || []).map((c, i) => ({
-          id: c.id,
-          name: c.name || `Sentinel Grid ${c.id.toUpperCase()}`,
-          protocol: 'HTTP-HLS / RTSP-TCP',
-          vendor: 'Axis Communications',
-          hls_url: c.hls_url,
-          rtsp_url: c.rtsp_url,
-          whep_url: c.whep_url,
-          department_name: 'Sentinel Camera Grid Hub'
-        }));
-        setCameras(cams.slice(0, gridSize));
+        try {
+          const data = await sentinelGridAPI.getCameras();
+          if (data && data.cameras && data.cameras.length > 0) {
+            const cams = data.cameras.map((c) => ({
+              id: c.id,
+              name: c.name || `Sentinel Grid ${c.id.toUpperCase()}`,
+              protocol: 'HTTP-HLS / RTSP-TCP',
+              vendor: 'Axis Communications',
+              hls_url: c.hls_url,
+              rtsp_url: c.rtsp_url,
+              whep_url: c.whep_url,
+              department_name: 'Sentinel Camera Grid Hub'
+            }));
+            setCameras(cams.slice(0, gridSize));
+            return;
+          }
+        } catch (err) {
+          console.warn("Backend warming up, using Sentinel Grid defaults", err);
+        }
+        setCameras(DEFAULT_SENTINEL_CAMS.slice(0, gridSize));
       } else {
         const data = await cameraAPI.getCameras({
           region: selectedRegion !== 'ALL' ? selectedRegion : null
         });
-        setCameras(data.slice(0, gridSize));
+        setCameras(data && data.length > 0 ? data.slice(0, gridSize) : DEFAULT_SENTINEL_CAMS.slice(0, gridSize));
       }
     } catch (e) {
       console.error("Error fetching cameras for matrix", e);
+      if (feedMode === 'sentinel_grid') {
+        setCameras(DEFAULT_SENTINEL_CAMS.slice(0, gridSize));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -120,8 +146,15 @@ export default function MultiCamMatrixView() {
       </div>
 
       {/* Grid Matrix Layout */}
-      <div className={`grid gap-4 ${gridSize === 4 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
-        {cameras.map((cam, idx) => (
+      {cameras.length === 0 ? (
+        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-3 shadow-lg">
+          <RefreshCw className="w-7 h-7 mx-auto text-cyan-400 animate-spin" />
+          <p className="font-semibold text-slate-200 text-sm">Initializing Sentinel Camera Matrix...</p>
+          <p className="text-xs text-slate-500">Connecting video feed decoders and TCP stream adapters.</p>
+        </div>
+      ) : (
+        <div className={`grid gap-4 ${gridSize === 4 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
+          {cameras.map((cam, idx) => (
           <div 
             key={cam.id || idx} 
             className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl space-y-2 flex flex-col justify-between"
@@ -196,6 +229,7 @@ export default function MultiCamMatrixView() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Sentinel Grid Configuration & Checklist Modal */}
       <SentinelGridConfigModal

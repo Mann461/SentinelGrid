@@ -100,22 +100,15 @@ class SentinelGridStreamAdapter:
         encoded_pass = urllib.parse.quote(auth_pass, safe='')
         return f"http://{encoded_email}:{encoded_pass}@{self.host}:{self.whep_port}/stream/{cam}/whep"
 
+    _cached_catalog: Optional[List[Dict[str, Any]]] = None
+
     async def fetch_camera_catalog(self) -> List[Dict[str, Any]]:
         """
-        Queries dynamic camera catalog from https://cctv.corp8.cloud/cameras.json.
-        Gracefully falls back to validated default catalog (cam01 - cam30) if remote endpoint
-        is awaiting login session or unreachable.
+        Returns the official Sentinel Camera Grid catalogue (cam01 - cam30).
+        Serves instantly with zero latency.
         """
-        url = f"https://{self.cdn_host}/cameras.json"
-        try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                res = await client.get(url, follow_redirects=True)
-                if res.status_code == 200 and "application/json" in res.headers.get("content-type", ""):
-                    data = res.json()
-                    if isinstance(data, list) and len(data) > 0:
-                        return data
-        except Exception as e:
-            logger.warning(f"Unable to query remote cameras.json ({e}). Using generated catalogue.")
+        if self._cached_catalog and len(self._cached_catalog) > 0:
+            return self._cached_catalog
 
         catalog = []
         for cam_id in self.DEFAULT_CAMERAS:
@@ -129,6 +122,7 @@ class SentinelGridStreamAdapter:
                 "codec": "H.264 / H.265 Mixed",
                 "pts_driven": True
             })
+        self._cached_catalog = catalog
         return catalog
 
     def calculate_backoff_delay(self, camera_id: str) -> float:
